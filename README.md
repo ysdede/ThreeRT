@@ -1,3 +1,5 @@
+<p align="center"><b><a href="https://ysdede.github.io/ThreeRT/">Live demos in the browser</a></b> · fork of <a href="https://github.com/meshy-dev/ThreeRT">meshy-dev/ThreeRT</a> · <a href="demos/README.md">about the demos</a></p>
+
 <p align="center">
   <a href="https://threert.dev">
     <picture>
