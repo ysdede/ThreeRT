@@ -9,6 +9,7 @@ import { execFileSync } from "node:child_process";
 import { build } from "esbuild";
 import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
+import { gzipSync } from "node:zlib";
 import { dirname, join, resolve } from "node:path";
 import { bundleGame, repoRoot } from "../tools/bundle-game.ts";
 import { serve } from "./serve.ts";
@@ -45,7 +46,6 @@ function bindgen(): string {
   if (version !== BINDGEN) throw new Error(`wasm-bindgen ${BINDGEN} is needed (found ${version || "none"}): cargo install wasm-bindgen-cli --version ${BINDGEN} --locked`);
   return bin;
 }
-const kib = (f: string) => `${(readFileSync(f).length / 1024).toFixed(0)} KiB`;
 
 rmSync(out, { recursive: true, force: true });
 mkdirSync(join(out, "pkg"), { recursive: true });
@@ -54,7 +54,11 @@ if (!args.includes("--skip-cargo")) {
   execFileSync("cargo", ["build", "--release", "--locked", "--target", "wasm32-unknown-unknown"], { cwd: crate, stdio: ["ignore", "inherit", "inherit"] });
 }
 execFileSync(bindgen(), ["--target", "web", "--no-typescript", "--out-dir", join(out, "pkg"), join(crate, "target/wasm32-unknown-unknown/release/threert_web.wasm")], { stdio: ["ignore", "ignore", "inherit"] });
-console.log(`engine module ${kib(join(out, "pkg/threert_web_bg.wasm"))}`);
+const wasmFile = join(out, "pkg/threert_web_bg.wasm");
+const gz = gzipSync(readFileSync(wasmFile), { level: 9 });
+writeFileSync(wasmFile + ".gz", gz);
+rmSync(wasmFile);
+console.log(`engine module ${(gz.length / 1048576).toFixed(1)} MiB gzip`);
 
 await build({ entryPoints: [join(here, "www/main.ts")], bundle: true, format: "esm", target: "es2022", outfile: join(out, "main.js"), nodePaths: [join(repoRoot, "node_modules")], logLevel: "warning" });
 copyFileSync(join(here, "www/loader.js"), join(out, "loader.js"));

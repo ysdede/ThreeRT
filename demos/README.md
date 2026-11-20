@@ -21,7 +21,7 @@ node demos/serve.ts out/demos 8100
 ```
 
 Needs the wasm32 target and the wasm-bindgen CLI of the version in `renderer/web/Cargo.toml` (see `tools/build-web.ts`).
-`node demos/build.ts --skip-cargo` reuses the last `cargo build`. The Showcase's Poly Haven hydrant (CC0) is fetched on the
+`node demos/build.ts --skip-cargo` reuses the last `cargo build`. The engine module is served gzip-compressed (18 MB raw, 3.2 MB; static hosting does not compress a .wasm) and unpacked in the page. The Showcase's Poly Haven hydrant (CC0) is fetched on the
 first build by `tools/fetch-polyhaven.ts`.
 
 `.github/workflows/demos.yml` builds the same folder on every push to `main` that touches it and publishes it with GitHub Pages.

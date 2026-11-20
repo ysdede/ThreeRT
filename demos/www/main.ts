@@ -67,7 +67,7 @@ async function main() {
   const wasm = (await import(new URL("./pkg/threert_web.js", import.meta.url).href)) as Module;
   // The module is fetched here (not by the initialiser) so that the page can show how much of it has arrived.
   {
-    const r = await fetch(new URL("./pkg/threert_web_bg.wasm", import.meta.url).href);
+    const r = await fetch(new URL("./pkg/threert_web_bg.wasm.gz", import.meta.url).href); // gzip: static hosting rarely compresses a .wasm
     if (!r.ok || !r.body) throw new Error("cannot fetch the engine module (" + r.status + ")");
     const total = Number(r.headers.get("content-length") ?? 0);
     let loaded = 0;
@@ -81,7 +81,7 @@ async function main() {
         c.enqueue(value);
       },
     });
-    await wasm.default({ module_or_path: new Response(body, { headers: { "content-type": "application/wasm" } }) } as never);
+    await wasm.default({ module_or_path: new Response(body.pipeThrough(new DecompressionStream("gzip") as unknown as ReadableWritablePair<Uint8Array, Uint8Array>), { headers: { "content-type": "application/wasm" } }) } as never);
   }
   const t_module = performance.now() - t0;
 
