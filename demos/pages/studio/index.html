@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ThreeRT Studio</title>
+<style>
+  /* Rubik is self-hosted next to this page. */
+  @font-face {
+    font-family: "Rubik";
+    src: url("../fonts/rubik-latin-wght-normal.woff2") format("woff2");
+    font-weight: 300 900;
+    font-display: block;
+  }
+  :root {
+    --overlay-text: #fafafa;
+    --overlay-accent: #ff853b;
+    --overlay-secondary: #a9dbe8;
+    --overlay-halo: #11151b;
+  }
+  html, body { margin: 0; height: 100%; background: #0b0c0e; color: #c9ccd1; font: 13px/1.4 ui-monospace, Menlo, monospace; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
+
+  /* The stage: the canvas and the overlay share one 16:9 box, as large as fits. Overlay sizes use cqw, so the
+     lower third scales with the picture exactly as it does at 1920 x 1080. */
+  #stage {
+    position: relative;
+    width: min(100vw, calc((100vh - 32px) * 16 / 9));
+    aspect-ratio: 16 / 9;
+    container-type: inline-size;
+  }
+  #view { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+  #panel {
+    position: absolute;
+    left: 5cqw;
+    bottom: 5.7cqw;
+    padding: 1.35cqw 2.3cqw 1.55cqw;
+    border-radius: 3px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02) 60%),
+      rgba(12, 16, 22, 0.38);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    filter: drop-shadow(0 0.9cqw 1.45cqw rgba(0, 0, 0, 0.55));
+    transform-origin: 50% 100%;
+    font-family: "Rubik", system-ui, sans-serif;
+    color: var(--overlay-text);
+    opacity: 0;
+    pointer-events: none;
+  }
+  #line {
+    position: absolute; left: 0; right: 0; top: -1px; height: 2px; border-radius: 2px;
+    background: linear-gradient(90deg, rgba(255, 133, 59, 0), #ff853b 18%, #ffb48a 50%, #ff853b 82%, rgba(255, 133, 59, 0));
+    box-shadow: 0 0 0.5cqw rgba(255, 133, 59, 0.8), 0 0 1.45cqw rgba(255, 133, 59, 0.45);
+    transform: scaleX(0);
+  }
+  #text { display: inline-block; -webkit-box-reflect: below 0.2cqw linear-gradient(transparent 52%, rgba(255, 255, 255, 0.32)); }
+  #head {
+    display: block; margin: 0; white-space: nowrap;
+    font-size: 3.54cqw; font-weight: 600; line-height: 1; letter-spacing: -0.01em;
+    clip-path: inset(-30px 100% -30px 0);
+  }
+  #status { min-height: 18px; }
+</style>
+</head>
+<body data-assets="../" data-files="studio/assets/neon-sign.png,studio/assets/neon-signal.png">
+<script src="../loader.js"></script>
+  <div id="stage">
+    <canvas id="view" width="1280" height="720"></canvas>
+    <div id="panel">
+      <div id="line"></div>
+      <div id="text"><p id="head">Ray-traced, live</p></div>
+    </div>
+  </div>
+  <div id="status">loading</div>
+  <script type="module" src="../main.js"></script>
+  <script>
+    // The overlay runs in real time over the canvas, on the page's own clock, and loops. It starts once the traced
+    // frames are flowing (the first shader compile takes a while). Enter, hold, exit, rest: 14 s.
+    const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+    const seg = (t, a, b) => clamp((t - a) / (b - a));
+    const outCubic = (t) => 1 - Math.pow(1 - t, 3);
+    const inOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+    const CYCLE = 14;
+
+    function render(t) {
+      const $ = (id) => document.getElementById(id);
+      const enter = outCubic(seg(t, 0.0, 0.9));
+      const exit = inOutCubic(seg(t, 6.2, 6.9));
+      const present = enter * (1 - exit);
+      const panel = $("panel");
+      panel.style.opacity = present;
+      panel.style.transform = `translateY(${((1 - enter) * 28 + exit * 28) / 19.2}cqw) scale(${0.97 + 0.03 * enter})`;
+      $("line").style.transform = `scaleX(${outCubic(seg(t, 0.15, 0.85))})`;
+      $("line").style.opacity = 1 - exit;
+      const reveal = outCubic(seg(t, 0.25, 1.0));
+      const head = $("head");
+      head.style.clipPath = `inset(-30px ${((1 - reveal) * 100).toFixed(2)}% -30px 0)`;
+      const ignite = t < 0.3 ? 0 : t < 0.4 ? 0.35 : t < 0.5 ? 1 : t < 0.56 ? 0.5 : 1;
+      const g = (0.55 + 0.45 * ignite) * (1 - exit);
+      head.style.textShadow = [
+        `0 0 4px rgba(255, 150, 90, ${0.9 * g})`,
+        `0 0 14px rgba(255, 120, 50, ${0.6 * g})`,
+        `0 0 34px rgba(255, 105, 40, ${0.35 * g})`,
+        `0 2px 16px rgba(0, 0, 0, 0.5)`,
+      ].join(", ");
+      head.style.color = `rgba(250, 250, 250, ${0.2 + 0.8 * reveal})`;
+    }
+
+    let t0 = null;
+    function loop(now) {
+      requestAnimationFrame(loop);
+      const flowing = (window.threert?.frames?.length ?? 0) > 30;
+      if (!flowing) return;
+      if (t0 === null) t0 = now + 1500; // a short pause once the picture is live
+      render(Math.max(0, ((now - t0) / 1000) % CYCLE));
+    }
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

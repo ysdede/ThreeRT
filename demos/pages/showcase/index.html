@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ThreeRT Showcase</title>
+<style>
+  @font-face { font-family: "Rubik"; src: url("../fonts/rubik-latin-wght-normal.woff2") format("woff2"); font-weight: 300 900; }
+  :root {
+    --bg: #12131a; --panel: #181a22; --raised: #22252f; --line: #2c303b;
+    --text: #eceef3; --muted: #9aa0ad; --accent: #8b6cf6; --accent-2: #b9a6ff; --ok: #65c58d; --warn: #f2b544; --bad: #f47a7a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 14px/1.4 "Rubik", system-ui, sans-serif; }
+  body { display: grid; grid-template-columns: 1fr 360px; grid-template-rows: 56px 1fr 128px; height: 100vh; }
+  header { grid-column: 1 / 3; display: flex; align-items: center; gap: 18px; padding: 0 20px; border-bottom: 1px solid var(--line); }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 22px; }
+  .brand img { width: 30px; height: 30px; }
+  .sep { width: 1px; height: 26px; background: var(--line); }
+  .title { color: var(--muted); font-size: 18px; }
+  .badge { margin-left: auto; display: flex; gap: 14px; align-items: center; padding: 6px 14px; border: 1px solid var(--line); border-radius: 8px; font-variant-numeric: tabular-nums; }
+  .badge b { color: var(--ok); font-weight: 600; }
+  .badge i { width: 1px; height: 16px; background: var(--line); }
+
+  main { position: relative; min-width: 0; min-height: 0; padding: 0; overflow: hidden; }
+  #stage { position: absolute; inset: 0; margin: auto; aspect-ratio: 16 / 9; max-width: 100%; max-height: 100%; container-type: inline-size; }
+  #view { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  #callouts { position: absolute; inset: 0; pointer-events: none; }
+  #leaders { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .co { position: absolute; display: flex; gap: 0.6cqw; align-items: flex-start; color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85); font-size: 1.05cqw; line-height: 1.25; white-space: nowrap; }
+  .co svg { position: static; width: 2.1cqw; height: 2.1cqw; flex: none; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.8)); }
+  .co b { font-weight: 600; display: block; font-size: 1.15cqw; }
+  .co span { color: #e2e2e2; }
+  #status { display: none; }
+
+  aside { grid-row: 2 / 4; grid-column: 2; border-left: 1px solid var(--line); padding: 18px 20px; overflow: auto; background: var(--panel); }
+  aside h2 { font-size: 19px; font-weight: 600; margin: 2px 0 10px; }
+  .feat { display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 12px; height: 40px; border-bottom: 1px solid var(--line); }
+  .feat svg { width: 22px; height: 22px; stroke: var(--text); fill: none; stroke-width: 1.6; }
+  .sw { width: 42px; height: 24px; border-radius: 12px; border: none; background: #3a3e4b; position: relative; cursor: pointer; }
+  .sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left 120ms ease; }
+  .sw[aria-checked=true] { background: var(--accent); }
+  .sw[aria-checked=true]::after { left: 21px; }
+  .sw:focus-visible, select:focus-visible, input:focus-visible, .buf:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+  .cap { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; margin: 10px 0 4px; font-size: 12.5px; }
+  .cap em { font-style: normal; font-size: 12px; padding: 1px 8px; border-radius: 10px; }
+  .yes { background: #1f3a2c; color: var(--ok); } .part { background: #3b321c; color: var(--warn); } .no { background: #3d2224; color: var(--bad); }
+  .q { display: grid; grid-template-columns: 112px 1fr 54px; gap: 10px; align-items: center; height: 40px; }
+  .q output, .q .ro { text-align: center; padding: 4px 0; border: 1px solid var(--line); border-radius: 6px; font-variant-numeric: tabular-nums; font-size: 13px; }
+  .q .ro { grid-column: 2 / 4; text-align: left; padding-left: 10px; color: var(--muted); }
+  select { width: 100%; height: 34px; background: var(--raised); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 0 8px; font: inherit; grid-column: 2 / 4; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  hr { border: none; border-top: 1px solid var(--line); margin: 10px 0; }
+  #metrics { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; line-height: 1.7; }
+  #metrics .bad { color: var(--bad); }
+
+  footer { grid-row: 3; grid-column: 1; display: flex; gap: 14px; align-items: center; padding: 10px 20px; border-top: 1px solid var(--line); overflow: hidden; }
+  .buf { flex: 1 1 0; min-width: 110px; max-width: 168px; display: flex; flex-direction: column; align-items: center; gap: 6px; background: none; border: none; color: var(--text); font: inherit; cursor: pointer; padding: 0; }
+  .buf div { width: 100%; aspect-ratio: 2 / 1; border-radius: 8px; border: 2px solid transparent; background: #222 center / cover no-repeat; }
+  .buf[aria-pressed=true] div { border-color: var(--accent); }
+  .buf[aria-disabled=true] { opacity: 0.45; cursor: not-allowed; }
+  .buf small { font-size: 13px; }
+</style>
+</head>
+<body data-assets="../" data-files="ThreeRT/assets/polyhaven/models/fire_hydrant_1k.glb">
+<script src="../loader.js"></script>
+  <header>
+    <div class="brand"><img src="mark.svg" alt="" />ThreeRT</div>
+    <div class="sep"></div>
+    <div class="title">Browser Ray Tracing Demo</div>
+    <div class="badge">RT <b id="b-fps">—</b> FPS <i></i> <span id="b-res">1280 × 720</span> <i></i> <span id="b-gpu">— ms</span></div>
+  </header>
+
+  <main>
+    <div id="stage">
+      <canvas id="view" width="1280" height="720"></canvas>
+      <div id="callouts"><svg id="leaders"></svg></div>
+    </div>
+    <div id="status">loading</div>
+  </main>
+
+  <aside>
+    <h2>Ray Tracing Features</h2>
+    <div class="feat"><svg viewBox="0 0 24 24"><path d="M12 3 3 8l9 5 9-5-9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5"/></svg><span>Path tracing <small style="color:var(--muted)">GI · reflections · refraction · soft shadows</small></span><button class="sw" id="f-rays" role="switch" aria-checked="true" aria-label="Path tracing"></button></div>
+    <div class="feat"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></svg><span>Sunlight (window)</span><button class="sw" id="f-sun" role="switch" aria-checked="true" aria-label="Sunlight"></button></div>
+    <div class="feat"><svg viewBox="0 0 24 24"><path d="M4 9h16v6H4z"/><path d="M8 9V4M16 9V4"/></svg><span>Area light (soft shadows)</span><button class="sw" id="f-area" role="switch" aria-checked="true" aria-label="Area light"></button></div>
+    <div class="feat"><svg viewBox="0 0 24 24"><path d="M6 17a4 4 0 0 1 0-8 6 6 0 0 1 11.5 1.5A3.5 3.5 0 0 1 17 17Z"/></svg><span>Volumetrics (fog)</span><button class="sw" id="f-fog" role="switch" aria-checked="false" aria-label="Volumetrics"></button></div>
+    <div class="feat"><svg viewBox="0 0 24 24"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg><span>Denoiser</span><button class="sw" id="f-den" role="switch" aria-checked="true" aria-label="Denoiser"></button></div>
+    <div class="feat"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 14-5M20 12a8 8 0 0 1-14 5"/><path d="M18 3v4h-4M6 21v-4h4"/></svg><span>Camera drift</span><button class="sw" id="f-orbit" role="switch" aria-checked="false" aria-label="Camera drift"></button></div>
+    <div class="feat"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4Z"/></svg><span>Labels</span><button class="sw" id="f-labels" role="switch" aria-checked="true" aria-label="Labels"></button></div>
+
+    <div class="cap">
+      <span>Global illumination</span><em class="yes">traced</em>
+      <span>Reflections (mirror, glossy)</span><em class="yes">traced</em>
+      <span>Refraction, Fresnel</span><em class="yes">traced</em>
+      <span>Soft area shadows</span><em class="yes">traced</em>
+      <span>Caustics</span><em class="part">paths only, noisy</em>
+      <span>Volumetric fog</span><em class="yes">traced</em>
+      <span>Subsurface scattering</span><em class="no">not in engine</em>
+      <span>Hardware RT in browser</span><em class="no">software BVH</em>
+    </div>
+
+    <hr />
+    <h2>Scene &amp; Quality</h2>
+    <div class="q"><span>Scene</span><select id="scene"><option value="showcase">Ray Tracing Showcase</option><option value="lab">ThreeRT Test Room</option></select></div>
+    <div class="q"><span>Samples</span><span class="ro">1 spp / frame + temporal</span></div>
+    <div class="q"><span>Bounces</span><input id="bounces" type="range" min="1" max="8" step="1" value="4" /><output id="o-bounces">4</output></div>
+    <div class="q"><span>Resolution scale</span><input id="scale" type="range" min="0" max="1" step="0.05" value="0" /><output id="o-scale">Auto</output></div>
+    <div id="metrics">loading…</div>
+  </aside>
+
+  <footer id="buffers">
+    <button class="buf" data-mode="0" aria-pressed="true"><div style="background-image:url(thumbs/beauty.png)"></div><small>Beauty</small></button>
+    <button class="buf" data-mode="8"><div style="background-image:url(thumbs/direct.png)"></div><small>Lighting (direct)</small></button>
+    <button class="buf" data-mode="6"><div style="background-image:url(thumbs/diffuse.png)"></div><small>Diffuse</small></button>
+    <button class="buf" data-mode="7"><div style="background-image:url(thumbs/specular.png)"></div><small>Specular</small></button>
+    <button class="buf" data-mode="1"><div style="background-image:url(thumbs/albedo.png)"></div><small>Albedo</small></button>
+    <button class="buf" data-mode="2"><div style="background-image:url(thumbs/normals.png)"></div><small>Normals</small></button>
+    <button class="buf" aria-disabled="true" title="The engine has no depth view"><div></div><small>Depth (not exposed)</small></button>
+  </footer>
+
+  <script type="module" src="../main.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const T = () => window.threert;
+    const ready = () => T() && typeof T().setViewMode === "function";
+    let mode = 0, denoise = true;
+    const applyMode = () => T().setViewMode(mode === 0 && !denoise ? 3 : mode);
+
+    // Switches: each one calls the engine (live core or a scene event).
+    const sw = (id, fn) => $(id).addEventListener("click", () => {
+      const on = $(id).getAttribute("aria-checked") !== "true";
+      $(id).setAttribute("aria-checked", String(on));
+      if (ready()) fn(on);
+    });
+    sw("f-rays", (on) => T().setRays(on));
+    sw("f-sun", (on) => T().event("set", { sun: on ? 1 : 0 }));
+    sw("f-area", (on) => T().event("set", { area: on ? 1 : 0 }));
+    sw("f-fog", (on) => T().event("set", { fog: on ? 1 : 0 }));
+    sw("f-den", (on) => { denoise = on; applyMode(); });
+    sw("f-orbit", (on) => { T().event("set", { orbit: on ? 1 : 0 }); drawCallouts(); });
+    $("f-labels").addEventListener("click", () => {
+      const on = $("f-labels").getAttribute("aria-checked") !== "true";
+      $("f-labels").setAttribute("aria-checked", String(on));
+      drawCallouts();
+    });
+    $("bounces").addEventListener("input", () => { $("o-bounces").textContent = $("bounces").value; if (ready()) T().setBounces(Number($("bounces").value)); });
+    $("scale").addEventListener("input", () => { const v = Number($("scale").value); $("o-scale").textContent = v === 0 ? "Auto" : v.toFixed(2); if (ready()) T().setScale(v); });
+    $("scene").addEventListener("change", () => { if ($("scene").value === "lab") location.href = "http://localhost:8095/"; });
+    $("buffers").addEventListener("click", (e) => {
+      const b = e.target.closest(".buf");
+      if (!b || b.getAttribute("aria-disabled") === "true") return;
+      mode = Number(b.dataset.mode);
+      for (const x of document.querySelectorAll(".buf")) x.setAttribute("aria-pressed", String(x === b));
+      if (ready()) applyMode();
+    });
+
+    // Callouts: world points projected through the scene's fixed camera (position, target, 46 degree vertical fov).
+    const CAM = { p: [0.4, 1.75, 5.4], t: [0, 1.05, -1.6], fov: 46 };
+    const ICON = {
+      light: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9V16h7v-2.1A6 6 0 0 0 12 3Z"/></svg>',
+      gi: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6"><path d="m3 20 6-10 4 6 3-4 5 8Z"/></svg>',
+      refl: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6"><path d="M12 3 3 8l9 5 9-5-9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5"/></svg>',
+      trans: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/></svg>',
+      geo: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6"><path d="M12 2 21 7v10l-9 5-9-5V7Z"/><path d="M12 2v20M3 7l9 5 9-5"/></svg>',
+      wave: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6"><path d="M3 8c3-3 6 3 9 0s6 3 9 0M3 13c3-3 6 3 9 0s6 3 9 0M3 18c3-3 6 3 9 0s6 3 9 0"/></svg>',
+      sun: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>',
+    };
+    const CALLOUTS = [
+      { at: [0.85, 2.95, -2.45], icon: "light", t: "Area Light", s: "Soft shadows", dx: 0.07, dy: -0.06 },
+      { at: [-2.6, 1.45, -2.2], icon: "gi", t: "Global Illumination", s: "Indirect light", dx: 0.0, dy: -0.12 },
+      { at: [0.1, 1.45, -1.0], icon: "refl", t: "Reflections", s: "Mirror / glossy", dx: 0.0, dy: -0.12 },
+      { at: [2.35, 1.3, -3.1], icon: "trans", t: "Translucency", s: "Rough transmission (no SSS)", dx: 0.01, dy: -0.12 },
+      { at: [-1.4, 0.7, 0.3], icon: "geo", t: "Geometry", s: "Complex mesh (glTF scan)", dx: -0.1, dy: 0.1 },
+      { at: [1.55, 0.05, 0.9], icon: "wave", t: "Refraction", s: "& caustics", dx: 0.06, dy: 0.02 },
+      { at: [-3.9, 2.6, -2.5], icon: "sun", t: "Sunlight", s: "Sharp shadows, sky", dx: 0.05, dy: -0.1 },
+    ];
+    const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+    const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+    const norm = (a) => { const l = Math.hypot(...a); return [a[0] / l, a[1] / l, a[2] / l]; };
+    const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    function project(p) {
+      const f = norm(sub(CAM.t, CAM.p)), r = norm(cross(f, [0, 1, 0])), u = cross(r, f);
+      const v = sub(p, CAM.p), z = dot(v, f);
+      const k = 1 / Math.tan((CAM.fov * Math.PI) / 360);
+      return [0.5 + (dot(v, r) / z) * k / (16 / 9) * 0.5, 0.5 - (dot(v, u) / z) * k * 0.5];
+    }
+    function drawCallouts() {
+      const box = $("callouts");
+      for (const e of box.querySelectorAll(".co")) e.remove();
+      const svg = $("leaders");
+      svg.innerHTML = "";
+      const show = $("f-labels").getAttribute("aria-checked") === "true" && $("f-orbit").getAttribute("aria-checked") !== "true";
+      if (!show) return;
+      for (const c of CALLOUTS) {
+        const [x, y] = project(c.at);
+        const lx = x + c.dx, ly = y + c.dy;
+        svg.insertAdjacentHTML("beforeend", `<line x1="${x * 100}%" y1="${y * 100}%" x2="${lx * 100}%" y2="${ly * 100}%" stroke="#fff" stroke-width="1.2" opacity="0.9"/><circle cx="${x * 100}%" cy="${y * 100}%" r="4" fill="#fff"/>`);
+        const el = document.createElement("div");
+        el.className = "co";
+        el.style.left = lx * 100 + "%";
+        el.style.top = ly * 100 + "%";
+        el.style.transform = `translate(${c.dx < 0 ? "-100%" : "0"}, -50%)`;
+        el.innerHTML = `${ICON[c.icon]}<div><b>${c.t}</b><span>${c.s}</span></div>`;
+        box.appendChild(el);
+      }
+    }
+    drawCallouts();
+
+    // Metrics: the engine's own frame records.
+    const med = (a) => { const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length / 2)] ?? 0; };
+    const p95 = (a) => { const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length * 0.95)] ?? 0; };
+    setInterval(() => {
+      const f = T()?.frames;
+      if (!f || f.length < 3) { $("metrics").textContent = f ? "Compiling shaders…" : "Loading engine…"; return; }
+      const r = f.slice(-60);
+      const fps = 1000 / (r.reduce((a, x) => a + x.interval, 0) / r.length);
+      const gpu = med(r.map((x) => x.gpu_ms));
+      const sc = r.at(-1).scale;
+      $("b-fps").textContent = fps.toFixed(0);
+      $("b-gpu").textContent = gpu.toFixed(1) + " ms";
+      $("b-res").textContent = `${Math.round(1280 * sc)} × ${Math.round(720 * sc)}`;
+      const a = T().info?.adapter;
+      const g = r.at(-1).guard_trips;
+      $("metrics").innerHTML = `${a ? a.name + " · " + a.backend : ""}<br>GPU ${gpu.toFixed(1)} ms (p95 ${p95(r.map((x) => x.gpu_ms)).toFixed(1)}) · trace ${med(r.map((x) => x.trace_ms)).toFixed(1)} ms<br>Frame ${med(r.map((x) => x.interval)).toFixed(1)} ms · scale ${sc.toFixed(2)} · ${T().info?.triangles ?? "—"} triangles<br>Loop guard <span class="${g ? "bad" : ""}">${g ?? "—"}</span>`;
+    }, 500);
+  </script>
+</body>
+</html>
