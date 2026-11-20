@@ -31,7 +31,6 @@ export const DEMOS = [
 const FILES: [string, string][] = [
   ["ThreeRT/assets/models/stanford_bunny.glb", "demos/assets/models/stanford_bunny.glb"],
   ["studio/assets/neon-sign.png", "demos/assets/studio/neon-sign.png"],
-  ["studio/assets/neon-signal.png", "demos/assets/studio/neon-signal.png"],
   ["ThreeRT/assets/polyhaven/models/fire_hydrant_1k.glb", "assets/polyhaven/models/fire_hydrant_1k.glb"],
 ];
 
@@ -70,7 +69,7 @@ for (const d of DEMOS) {
   console.log(`${d.id}: game ${(b.bytes / 1024).toFixed(0)} KiB`);
 }
 
-if (!existsSync(join(repoRoot, FILES[3][1]))) {
+if (!existsSync(join(repoRoot, FILES[2][1]))) {
   execFileSync(process.execPath, [join(repoRoot, "tools/fetch-polyhaven.ts"), "--res", "1k", "--textures", "", "--models", "fire_hydrant"], { cwd: repoRoot, stdio: "inherit" });
 }
 for (const [to, from] of FILES) {
