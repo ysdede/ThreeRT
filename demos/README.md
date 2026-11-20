@@ -43,3 +43,15 @@ is), a few seconds once the browser has compiled it. `www/loader.js` creates the
 `createComputePipelineAsync`, so the page stays alive meanwhile (the animation frames stall once, for 0.7-2.3 s at the start;
 a plain `createComputePipeline` stalled them for the whole compile) and the overlay shows the count of shaders
 compiled. `?syncpipelines` on a page's address turns that off.
+
+### Sharing a compiled kernel
+
+WebGPU takes WGSL only: a page cannot load a shader compiled elsewhere (not for a GPU model, not from this repository), and
+the compile cache belongs to the browser and the driver. What was tried to have the compile done before a demo is opened:
+
+- A hidden iframe of the demo on the landing page (4 at a time: all compiled in 66 s instead of 4 x 47 s, the page stayed
+  alive): the page opened afterwards compiled again, 40-55 s. A kernel compiled in an iframe is not reused by the page
+  itself; a second load of the same page (reload, new tab, restart) is, 2-4 s.
+- Speculation rules `prerender`: Chrome did not prerender in the automated browser used here, so it is untested and not used.
+- One kernel for several demos: Bunny Lab and Test Room have the same WGSL and differ in one feature bit (`FEAT` 67127296 and
+  67127552), Showcase and Studio have their own material functions in the source. Each is its own compile.

@@ -13,7 +13,7 @@ export function serve(dir: string, port: number): Promise<string> {
     let file = join(dir, path);
     if (existsSync(file) && statSync(file).isDirectory()) file = join(file, "index.html");
     if (!file.startsWith(dir) || !existsSync(file)) return void res.writeHead(404).end("not found");
-    res.writeHead(200, { "content-type": types[extname(file)] ?? "application/octet-stream", "content-length": statSync(file).size, "cache-control": "no-store" });
+    res.writeHead(200, { "content-type": types[extname(file)] ?? "application/octet-stream", "content-length": statSync(file).size, "cache-control": "no-cache" });
     createReadStream(file).pipe(res);
   });
   return new Promise((ok) => server.listen(port, "127.0.0.1", () => ok(`http://localhost:${(server.address() as { port: number }).port}/`)));

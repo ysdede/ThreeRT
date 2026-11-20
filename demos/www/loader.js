@@ -183,7 +183,7 @@
         root.classList.add("done");
         setTimeout(() => root.remove(), 500);
         window.threertLoaded = { total_ms: Math.round(performance.now() - t00) };
-        try { localStorage.setItem(KEY, String(Date.now())); } catch {}
+        window.threertMarkWarm();
       }));
     }
     if (window.threertError && !err.textContent) fail(String(window.threertError).split("\n")[0]);
