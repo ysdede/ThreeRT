@@ -465,6 +465,46 @@ fn commit_view(v: &mut View) -> Result<bool, JsValue> {
     Ok(rebuilt)
 }
 
+/// Ray tracing on or off (LiveCore::set_rays): off, the kernel traces camera rays only (no shadows, no bounce
+/// light): the "what tracing adds" comparison on the same scene, materials and exposure.
+#[wasm_bindgen(js_name = setRays)]
+pub fn set_rays(on: bool) -> Result<(), JsValue> {
+    view(|v| {
+        v.core.set_rays(on);
+        Ok(())
+    })
+}
+
+/// The live view mode (LiveCore::view_mode): 0 lit, 1 base color, 2 world normal, 3 lit without denoiser, 4 raw
+/// sample, 5 history length, 6 diffuse, 7 specular, 8 deterministic direct light.
+#[wasm_bindgen(js_name = setViewMode)]
+pub fn set_view_mode(mode: u32) -> Result<(), JsValue> {
+    view(|v| {
+        v.core.view_mode = mode.min(8);
+        v.core.reset_history();
+        Ok(())
+    })
+}
+
+/// Path-tracing bounces of the live frames (LiveCore::bounces, 4 by default; 1..=8 here). The history starts over.
+#[wasm_bindgen(js_name = setBounces)]
+pub fn set_bounces(n: u32) -> Result<(), JsValue> {
+    view(|v| {
+        v.core.bounces = n.clamp(1, 8);
+        v.core.reset_history();
+        Ok(())
+    })
+}
+
+/// Fixed render scale (SCALE_FLOOR ..= 1), or dynamic resolution (0): LiveCore::set_scale.
+#[wasm_bindgen(js_name = setScale)]
+pub fn set_scale(s: f32) -> Result<(), JsValue> {
+    view(|v| {
+        v.core.set_scale(s);
+        Ok(())
+    })
+}
+
 /// Lockstep on or off (a scripted test's clock: every frame takes the `dt` it is given, as the native runner's
 /// `lockstep` command).
 #[wasm_bindgen(js_name = setLockstep)]
