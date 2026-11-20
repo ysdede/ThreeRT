@@ -146,8 +146,8 @@ if (import.meta.main) {
   const res = arg("--res") ?? "1k";
   const set = SETS[arg("--set") ?? "default"];
   if (!set) throw new Error(`--set: ${Object.keys(SETS).join(" | ")}`);
-  const textures = arg("--textures")?.split(",") ?? set.textures;
-  const models = arg("--models")?.split(",") ?? set.models;
+  const textures = arg("--textures")?.split(",").filter(Boolean) ?? set.textures;
+  const models = arg("--models")?.split(",").filter(Boolean) ?? set.models;
   const mfile = join(out, "manifest.json");
   const manifest: Record<string, string> = existsSync(mfile) ? JSON.parse(readFileSync(mfile, "utf8")) : {};
   let failed = 0;
